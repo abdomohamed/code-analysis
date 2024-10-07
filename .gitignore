@@ -1,0 +1,8 @@
+repos
+.env
+.vscode
+node_modules
+dist
+__pycache__
+output
+*.log
