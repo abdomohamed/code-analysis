@@ -14,7 +14,7 @@ class OutputPersistor:
     def _default_name_strategy(self, output_dir: Path, question_answer: QuestionAnswer) -> str:
         return output_dir / f"{question_answer.model}_question_{question_answer.question[:50]}.txt"
     
-    async def persist(self, result: List[List[QuestionAnswer]], filename_strategy: Callable[[Path, QuestionAnswer], str]):
+    async def persist(self, result: List[List[QuestionAnswer]], filename_strategy: Callable[[Path, QuestionAnswer], str] = None):
         for question_model_answers in result:
             for question_answer in question_model_answers:
                 filename =  filename_strategy(self.output_dir, question_answer) if filename_strategy else self._default_name_strategy(self.output_dir, question_answer)

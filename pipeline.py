@@ -9,8 +9,7 @@ from output_persistor import OutputPersistor
 from repository_copilot import RepositoryCoPilot
 
 class Pipeline:
-    def __init__(self, directory: str, questions, fileProcessor: FileProcessor, repoCoPilot: RepositoryCoPilot, chunker: Chunker, outputPersistor: OutputPersistor):
-        self.directory = directory
+    def __init__(self, questions, fileProcessor: FileProcessor, repoCoPilot: RepositoryCoPilot, chunker: Chunker, outputPersistor: OutputPersistor):
         self.questions = questions
         self.repoCoPilot = repoCoPilot
         self.fileProcessor = fileProcessor
