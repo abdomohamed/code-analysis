@@ -17,6 +17,10 @@ This application is designed to assist with various coding tasks using AI models
 - Python 3.7 or higher
 - Virtual environment (optional but recommended)
 - Required Python packages (listed in [`requirements.txt`]
+- Azure OpenAI Deployments named the following:
+  - gpt4
+  - gpt-4o
+  - gpt-4o-mini
 
 ### Installation
 
@@ -42,7 +46,7 @@ This application is designed to assist with various coding tasks using AI models
      ```env
      ENDPOINT_URL=https://<your-endpoint>.openai.azure.com/
      AZURE_OPENAI_API_KEY=<your-api-key>
-     DEPLOYMENT_NAME=gpt-4o-mini
+     API_VERSION=2023-03-15-preview
      ```
 
 ## Usage
