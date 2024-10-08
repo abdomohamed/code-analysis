@@ -17,12 +17,13 @@ load_dotenv(".env")
 endpoint = os.getenv("ENDPOINT_URL")
 deployment = os.getenv("DEPLOYMENT_NAME")
 api_key = os.getenv("AZURE_OPENAI_API_KEY")
+api_version = os.getenv("API_VERSION")
 
 # Initialize Azure OpenAI client with key-based authentication
 client = AsyncAzureOpenAI(
     azure_endpoint=endpoint,
     api_key=api_key,
-    api_version="2024-05-01-preview",
+    api_version=api_version,
     max_retries=4,
 )
 
