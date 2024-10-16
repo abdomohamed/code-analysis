@@ -1,5 +1,19 @@
 import time
+"""
+A class used to chunk files into smaller pieces based on a maximum chunk size. A chunk can have a max of one file.
+Any file that exceeds the maximum chunk size will be moved to a new chunk.
+
+Attributes
+----------
+max_chunk_size : int
+    The maximum size of each chunk. Default is 2000.
+Methods
+-------
+chunk_files(files_content)
+    Add files to chunks based on the maximum chunk size.
+"""
 from common_models import FileType
+
 
 class Chunker:
     def __init__(self, max_chunk_size=2000):
@@ -15,11 +29,11 @@ class Chunker:
             
             current_chunk = ""
 
-            for filename, content in  files_content[file_type]:
-                if len(current_chunk) + len(content) + len(filename) > self.max_chunk_size:
+            for filename, content in  files_content[file_type]:                
+                if len(current_chunk) + len(content) + len(filename) + len(file_type) + len("file_name,") + len("file_type,") + len("content") > self.max_chunk_size:
                     chunks[file_type].append(current_chunk)
                     current_chunk = ""
-                current_chunk += f"### {filename}\n{content}\n\n"
+                current_chunk += f"### file_name:{filename}, file_type: {file_type}, content:\n{content}\n\n"
 
             if current_chunk:
                 chunks[file_type].append(current_chunk)

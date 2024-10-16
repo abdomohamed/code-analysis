@@ -6,9 +6,11 @@ This application is designed to assist with various coding tasks using AI models
 
 ## Features
 
-- **Refactoring Code**: Refactor code from AWS services to Azure services.
+- **Refactoring Code**: Suggest refactoring changes to a migrate a code from using AWS services to Azure services.
 - **Dependency Graph Generation**: Generate a dependency graph of the app dependencies in GraphVIZ format.
+- **Model Configuration**: Configure different AI models to be used by the application.
 - **Asynchronous Processing**: Efficiently handle long-running I/O operations without blocking.
+
 
 ## Setup
 
@@ -17,6 +19,7 @@ This application is designed to assist with various coding tasks using AI models
 - Python 3.7 or higher
 - Virtual environment (optional but recommended)
 - Required Python packages (listed in [`requirements.txt`]
+- [Optional] Ollama installed https://ollama.com/
 
 ### Installation
 
@@ -45,6 +48,44 @@ This application is designed to assist with various coding tasks using AI models
      DEPLOYMENT_NAME=gpt-4o-mini
      ```
 
+### Configuring AI Models
+
+To configure different AI models, follow these steps:
+
+1. **Create a json file for e.g. `model_config.json` File**:
+   - Add entries in the `model_config.json` file to include the models you want to configure. Each entry should include the model name, version, endpoint, API key, platform, and retries.
+   - Example:
+     ```json
+     [
+      {
+         "model_name": ["gpt4", "gpt-4o", "gpt-4o-mini"], => These are must
+         "model_version": "<version>", => optional it depends on the platform. For Azure platform is a must.
+         "model_endpoint": "<endpoint>", => A must
+         "api_key": "<api_key>", => A must for Azure. 
+         "platform": "azure", => A must.
+         "retries": 4 => 
+      },
+      {
+         "model_name": ["codellama"],
+         "model_endpoint": "<endpoint>",
+         "platform": "ollama",
+         "retries": 2
+      }
+   ]
+     ```
+
+2. **Set Environment Variables**:
+   - Ensure the `.env` file in the root directory contains the necessary environment variables for the models you are configuring.
+   - Example:
+     ```env
+     MODELS_CONFIGURATION_PATH=./model_config.json
+     ```
+3. **Local Models**
+ - The Application can work with a locally hosted models that are compliant with OpenAI API endpoints. The application is tested with ollama. Like we've used codellama for the expriementation. 
+  - You can download ollama from here https://ollama.com/
+  - Once it's ready, you would need to download the ollama model. 
+  - Then host the model. You can achieve both steps in one command ```ollama run codellama```
+  - Then you can use endpoint ```http://<ollama_host_name>:11434/v1``` for the OpenAI client.  
 ## Usage
 
 1. **Run the Application**:

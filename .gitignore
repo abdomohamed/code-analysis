@@ -7,4 +7,6 @@ __pycache__
 output
 *.log
  git-credential-manager/
+model_config.json
+ 
  

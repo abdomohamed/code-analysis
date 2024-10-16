@@ -1,24 +1,28 @@
 import asyncio
 from typing import List
 
-from openai import AsyncAzureOpenAI
+from openai import AsyncOpenAI
 from chunker import Chunker
 from common_models import Question, ModelAnswer
+from model_config import ModelConfigParser
+from openai_client_factory import OpenAIClientFactory
 
 class RepositoryCoPilot:
-    def __init__(self, max_chunk_size=2000, client: AsyncAzureOpenAI = None):
-        self.chunker = Chunker(max_chunk_size)
-        self.client = client
-        self.default_system_prompt = "You're an AI assistant that helps people to have more understanding about their source code repositories. Make sure your answers are based on the content of the repository. Another task you can do is by helping in migrating code from one cloud provider libraries to another. In-case of migrating code, make sure to validate the approach of the migration by writing unit tests for the change before and after the migration to validate the change."
-
+    def __init__(self, max_chunk_size=2000, openai_client_factory: OpenAIClientFactory = None):
+        self._chunker = Chunker(max_chunk_size)
+        self._openai_client_factory = openai_client_factory
+        self._default_system_prompt = "You're an AI assistant that helps people to have more understanding about their source code repositories. Make sure your answers are based on the content of the repository. Another task you can do is by helping in migrating code from one cloud provider libraries to another. In-case of migrating code, make sure to validate the approach of the migration by writing unit tests for the change before and after the migration to validate the change."
+        
     async def ask(self, question: Question, chunks) -> List[ModelAnswer]:
         async def get_response(chunk, model) -> ModelAnswer:
-            system_prompt = question.system_prompt if question.system_prompt else self.default_system_prompt
+            system_prompt = question.system_prompt if question.system_prompt else self._default_system_prompt
 
-            response = await self.client.chat.completions.create(
+            client = await self._openai_client_factory.get_client(model)
+            
+            response = await client.chat.completions.create(
                 model=model,
                 messages=[
-                    {"role": "system", "content": f"{system_prompt} ```\nContext:\n" + chunk + "\n```"},
+                    {"role": "system", "content": f"{system_prompt} \n```Content Structure: file_name, fike_type, content```\n ```\nContext:\n" + chunk + "\n```"},
                     {"role": "user", "content": question.text}
                 ],
                 temperature=0,
@@ -56,7 +60,9 @@ class RepositoryCoPilot:
             print(f"Token count for deployment {model}: {token_count}")
 
             try:
-                response = await self.client.chat.completions.create(
+                client = await self._openai_client_factory.get_client(model)
+                
+                response = await client.chat.completions.create(
                     model=model,
                     messages=[
                         {"role": "system", "content": f"{system_prompt} ```\nContext:\n" + combined_answers + "\n```"},

@@ -1,0 +1,16 @@
+[
+    {
+        "model_name": ["gpt4", "gpt-4o", "gpt-4o-mini"],
+        "model_version": "<version>",
+        "model_endpoint": "<endpoint>",
+        "api_key": "<api_key>",
+        "platform": "azure",
+        "retries": 4
+    },
+    {
+        "model_name": ["codellama"],
+        "model_endpoint": "<endpoint>",
+        "platform": "ollama",
+        "retries": 2
+    }
+]

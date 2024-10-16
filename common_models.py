@@ -1,5 +1,5 @@
 from collections import namedtuple
-from enum import Enum
+from enum import Enum, StrEnum
 
 
 ModelAnswer = namedtuple('ModelAnswer', ['model', 'answer', 'content'])
@@ -14,7 +14,7 @@ class QuestionAnswer:
         self.end_time = end_time
         self.content = content
 
-class FileType(Enum):
+class FileType(StrEnum):
     CODE = "Code"
     TEXT = "Text"
     IMAGE = "Image"
