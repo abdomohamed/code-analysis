@@ -5,9 +5,13 @@ import aiofiles
 from common_models import FileType
 
 class FileProcessor:
-    def __init__(self, directory, folders_to_ignore=[".git", ".github", ".vscode", "node_modules", "__pycache__", "gradle"]):
+    def __init__(self, 
+                 directory, 
+                 folders_to_ignore=[".git", ".github", ".vscode", "node_modules", "__pycache__", "gradle"], 
+                 files_to_ignore=['.css', '.js']):
         self.directory = directory
         self.folders_to_ignore = folders_to_ignore
+        self.files_to_ignore = files_to_ignore
 
     async def _read_file(self, filepath):
         try:
@@ -38,7 +42,11 @@ class FileProcessor:
             for filepath in Path(dir).rglob('*.*'):
                 if any(ignored_folder in filepath.parts for ignored_folder in self.folders_to_ignore):
                     continue
-
+                
+                if filepath.suffix in self.files_to_ignore:
+                    print(f"\nIgnoring file {filepath}\n")
+                    continue
+                
                 if filepath.is_dir():
                     directories.append(filepath)
                     continue
