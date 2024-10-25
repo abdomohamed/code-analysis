@@ -7,13 +7,16 @@ from chunker import Chunker
 from common_models import Question, ModelAnswer
 from model_config import ModelConfigParser
 from openai_client_factory import OpenAIClientFactory
+from progress_reporter import ProgressReporter
+from common_models import PipelineSteps
 
 class RepositoryCoPilot:
-    def __init__(self, max_chunk_size=2000, openai_client_factory: OpenAIClientFactory = None, max_tokens=16384):
+    def __init__(self, max_chunk_size=2000, openai_client_factory: OpenAIClientFactory = None, max_tokens=16384, progress_reporter: ProgressReporter = None):
         self._chunker = Chunker(max_chunk_size)
         self._openai_client_factory = openai_client_factory
         self._default_system_prompt = "You're an AI assistant that helps people to have more understanding about their source code repositories. Make sure your answers are based on the content of the repository. Another task you can do is by helping in migrating code from one cloud provider libraries to another. In-case of migrating code, make sure to validate the approach of the migration by writing unit tests for the change before and after the migration to validate the change."
         self._max_tokens = max_tokens
+        self._progress_reporter = progress_reporter
         
     async def ask(self, question: Question, chunks) -> List[ModelAnswer]:
         async def get_response(chunk, model) -> ModelAnswer:
@@ -52,8 +55,9 @@ class RepositoryCoPilot:
                     )
                     
                     ignore_answer = not any(code_change.is_refactored for code_change in response.choices[0].message.parsed.changes)
-                    
+                
                 return ModelAnswer(model=model, answer=response.choices[0].message.content.strip(), content=chunk, ignore=ignore_answer)
+                
             except Exception as e:
                 print(f"Question: {question.text} for model: {model}, had a skipped chunk due to {e}")
                 
@@ -61,6 +65,9 @@ class RepositoryCoPilot:
                     await f.write(f"Chunk failed for LLM Model: {model}, prompt: {messages}, and chunk {chunk} The reason was: {e}\n\n")
 
                 return ModelAnswer(model=model, answer="error", content=chunk, ignore=True)
+            finally:
+                if(self._progress_reporter):
+                    self._progress_reporter.update(PipelineSteps.ANSWERING_QUESTIONS, 1)
             
             
         tasks = []
@@ -69,11 +76,14 @@ class RepositoryCoPilot:
             for model in question.models:
                 tasks.append(get_response(chunk, model))
 
+        if(self._progress_reporter):
+            self._progress_reporter.init_step(PipelineSteps.ANSWERING_QUESTIONS, len(tasks))
+            
         modelAnswers = await asyncio.gather(*tasks)
         return modelAnswers
 
     async def refine_answer(self, answers: List[ModelAnswer], question: Question) -> List[ModelAnswer]:
-        system_prompt = question.system_prompt if question.system_prompt else self.default_system_prompt
+        system_prompt = question.system_prompt if question.system_prompt else self._default_system_prompt
         
         
         model_answers = {}
@@ -127,9 +137,15 @@ class RepositoryCoPilot:
             except Exception as e:
                 print(f"Error refining answer for model {model}: {e}")
                 raise e
+            finally:
+                if(self._progress_reporter):
+                    self._progress_reporter.update(PipelineSteps.REFINING_ANSWERS, 1)
 
         for model, answers in model_answers.items():
             task = refine(model, answers)
             tasks.append(task)
 
+        if(self._progress_reporter):
+            self._progress_reporter.init_step(PipelineSteps.REFINING_ANSWERS, len(tasks))
+            
         return await asyncio.gather(*tasks)

@@ -43,3 +43,10 @@ class Question:
     @staticmethod
     def from_dict(data):
         return Question(data["text"], data["enabled"], data["system_prompt"])
+    
+class PipelineSteps(StrEnum):
+    READING_FILES = "Reading files"
+    CHUNKING = "Chunking files"
+    ANSWERING_QUESTIONS = "Answering questions"
+    GENERATING_OUTPUT = "Generating output" 
+    REFINING_ANSWERS = "Refining answers"

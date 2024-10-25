@@ -1,4 +1,5 @@
 import asyncio
+from threading import Event
 from typing import List
 import time
 
@@ -22,6 +23,7 @@ class Pipeline:
         tasks = [self._ask(question, chunks) for question in self.questions if question.enabled]
         result = await asyncio.gather(*tasks)
         await self.outputPersistor.persist(result)
+        
         return result
         
 

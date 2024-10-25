@@ -2,21 +2,27 @@ import asyncio
 from pathlib import Path
 import aiofiles
 
-from common_models import FileType
+from common_models import FileType, PipelineSteps
+from progress_reporter import ProgressReporter
 
 class FileProcessor:
     def __init__(self, 
                  directory, 
                  folders_to_ignore=[".git", ".github", ".vscode", "node_modules", "__pycache__", "gradle"], 
-                 files_to_ignore=['.css', '.js']):
+                 files_to_ignore=['.css', '.js'], progress_reporter: ProgressReporter=None):
+        
         self.directory = directory
         self.folders_to_ignore = folders_to_ignore
         self.files_to_ignore = files_to_ignore
+        self.progress_reporter = progress_reporter
 
     async def _read_file(self, filepath):
         try:
             async with aiofiles.open(filepath, 'r', encoding='utf-8') as file:
-                return filepath.name, self._get_file_type(filepath=filepath),  await file.read()
+                res =  filepath.name, self._get_file_type(filepath=filepath),  await file.read()
+                if self.progress_reporter:
+                    self.progress_reporter.update(PipelineSteps.READING_FILES, 1)
+                return res
         except Exception as e:
             print(f"Error reading {filepath}: {e}")
             return filepath.name, None, None
@@ -52,6 +58,8 @@ class FileProcessor:
                     continue
                 tasks.append(self._read_file(filepath))
 
+            self.progress_reporter.init_step(PipelineSteps.READING_FILES, len(tasks))
+            
             results = await asyncio.gather(*tasks)
 
             for filename, type, content in results:

@@ -1,15 +1,18 @@
 import asyncio
+from threading import Lock
+import threading
 from openai import AsyncAzureOpenAI
 import os
 import os
 
 from chunker import ChunkPerFile, Chunker
-from common_models import FileType, Question
+from common_models import FileType, PipelineSteps, Question
 from file_processor import FileProcessor
 from model_config import ModelConfigParser
 from openai_client_factory import OpenAIClientFactory
 from output_persistor import OutputPersistor
 from pipeline import Pipeline
+from progress_reporter import ProgressReporter
 from repository_copilot import RepositoryCoPilot
 from dotenv import load_dotenv
 from response_formats.code_refactoring import CodeRefactoringResponseFormat
@@ -38,7 +41,8 @@ async def main():
         ),
         Question(
             text="What are the cloud services used in this project?", 
-            enabled=False
+            enabled=True,
+            models=["gpt-4o", "gpt-4o-mini"]
         ),
         Question(
             text="Provide a brief overview of the architecture of this project?", 
@@ -70,10 +74,10 @@ async def main():
                     - Respect the original functionality of the code
                     - Generate unit tests for the refactored code
                     - Don't make your own answer, limit the refactoring to the passed context
-                    - Stick to the original file name
+                    - Stick to the original file name adding the suffix "_refactored" to the file name
                     - Stick to the original file programming language
                     """, 
-            enabled=True,
+            enabled=False,
             system_prompt="""You are a helpful code assistant, you have good knowledge in coding and you will use the provided context to answer user questions with detailed explanations. You will help in migrating source files in the context. Make sure to limit the refactoring to the passed context don't make your own answer. You must generate unit tests for the refactored code before and after the refactoring to validate the change. Read the given context before answering questions and think step by step. If you can not answer a user question based on the provided context, inform the user. Do not use any other information for answering user""", 
             models=[ "gpt-4o"], 
             allowed_file_types=[FileType.CODE],
@@ -90,16 +94,33 @@ async def main():
     ]
 
     directory = "./repos/online-e-commerce-marketplace-project-backend"
+    lock = Lock()
+    
+    stop_event = threading.Event()
+    
+    progress_reporter = ProgressReporter(lock=lock, steps=[
+        PipelineSteps.READING_FILES,
+        PipelineSteps.CHUNKING,
+        PipelineSteps.ANSWERING_QUESTIONS,
+        PipelineSteps.REFINING_ANSWERS,
+        PipelineSteps.GENERATING_OUTPUT
+    ], stop_event=stop_event)
 
-    fileProcessor = FileProcessor(directory)
+    progress_reporter_thread = threading.Thread(target=progress_reporter.report, daemon=True)
+    progress_reporter_thread.start()
+    
+    fileProcessor = FileProcessor(directory=directory, progress_reporter=progress_reporter)
     openAIClientFactory = OpenAIClientFactory(model_config_parser=ModelConfigParser())
-    repoCoPilot = RepositoryCoPilot(openai_client_factory=openAIClientFactory)
-    chunker = ChunkPerFile()
+    repoCoPilot = RepositoryCoPilot(openai_client_factory=openAIClientFactory, progress_reporter=progress_reporter)
+    chunker = ChunkPerFile(progress_reporter=progress_reporter)
     outputPersistor = OutputPersistor()
 
     pipeline = Pipeline(questions, fileProcessor,
                         repoCoPilot, chunker, outputPersistor)
+    
     await pipeline.run()
+    
+    stop_event.set()
 
 if __name__ == "__main__":
     asyncio.run(main())
