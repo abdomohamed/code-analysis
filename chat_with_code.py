@@ -41,7 +41,7 @@ async def main():
         ),
         Question(
             text="What are the cloud services used in this project?", 
-            enabled=True,
+            enabled=False,
             models=["gpt-4o", "gpt-4o-mini"]
         ),
         Question(
@@ -77,7 +77,7 @@ async def main():
                     - Stick to the original file name adding the suffix "_refactored" to the file name
                     - Stick to the original file programming language
                     """, 
-            enabled=False,
+            enabled=True,
             system_prompt="""You are a helpful code assistant, you have good knowledge in coding and you will use the provided context to answer user questions with detailed explanations. You will help in migrating source files in the context. Make sure to limit the refactoring to the passed context don't make your own answer. You must generate unit tests for the refactored code before and after the refactoring to validate the change. Read the given context before answering questions and think step by step. If you can not answer a user question based on the provided context, inform the user. Do not use any other information for answering user""", 
             models=[ "gpt-4o"], 
             allowed_file_types=[FileType.CODE],

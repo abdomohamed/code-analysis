@@ -117,6 +117,27 @@ This application is designed to assist with various coding tasks using AI models
    - Ensure that all asynchronous functions are awaited properly.
    - Use `asyncio.run()` to run the main asynchronous function.
 
+### Examples
+
+The below is an example of running the expriement of migrating code in this repository ``` https://github.com/luckyPrice/online-e-commerce-marketplace-project-backend.git``` from AWS to Azure using the below prompt:
+```
+      Refactor the code in the context. Things to consider:
+                    - Migrate the code where it uses AWS services to Azure services
+                    - Respect the original functionality of the code
+                    - Generate unit tests for the refactored code
+                    - Don't make your own answer, limit the refactoring to the passed context
+                    - Stick to the original file name adding the suffix "_refactored" to the file name
+                    - Stick to the original file programming language
+```
+
+Which ended up refactoring some of the Java and .xml file, here is a sample of the one migrated Java files:
+![alt text](./docs/image.png)
+
+**Some of the observations:**
+- The LLM did remove the injected secrets and structure that are AWS focused. Replaced them with more Azure focused. 
+- The refactoring for configuration keys like "azure.storage.connection-string" these maybe one of the things that can we can ask LLM to don't migrate. 
+
+
 ## Conclusion
 
 This application leverages AI models to assist with various coding tasks, making it a powerful tool for developers. By following the setup, debugging, and troubleshooting steps outlined in this README, you can effectively use and maintain the application.
