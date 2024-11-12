@@ -77,10 +77,26 @@ async def main():
                     - Stick to the original file name adding the suffix "_refactored" to the file name
                     - Stick to the original file programming language
                     """, 
-            enabled=True,
+            enabled=False,
             system_prompt="""You are a helpful code assistant, you have good knowledge in coding and you will use the provided context to answer user questions with detailed explanations. You will help in migrating source files in the context. Make sure to limit the refactoring to the passed context don't make your own answer. You must generate unit tests for the refactored code before and after the refactoring to validate the change. Read the given context before answering questions and think step by step. If you can not answer a user question based on the provided context, inform the user. Do not use any other information for answering user""", 
             models=[ "gpt-4o"], 
             allowed_file_types=[FileType.CODE],
+            structured_output=True,
+            response_format=CodeRefactoringResponseFormat
+        ),
+         Question(
+            text="""Refactor the code in the context. Things to consider:
+                    - Migrate the code where it uses PCF cloud foundary services connectors to Azure services
+                    - Respect the original functionality of the code
+                    - Generate unit tests for the refactored code
+                    - Don't make your own answer, limit the refactoring to the passed context
+                    - Stick to the original file name
+                    - Stick to the original file programming language
+                    """, 
+            enabled=True,
+            system_prompt="""You are a helpful code assistant, you have good knowledge in coding and you will use the provided context to answer user questions with detailed explanations. You will help in migrating source files in the context. Make sure to limit the refactoring to the passed context don't make your own answer. You must generate unit tests for the refactored code before and after the refactoring to validate the change. Read the given context before answering questions and think step by step. If you can not answer a user question based on the provided context, inform the user. Do not use any other information for answering user""", 
+            models=[ "gpt-4o"], 
+            allowed_file_types=[FileType.CODE, FileType.TEXT],
             structured_output=True,
             response_format=CodeRefactoringResponseFormat
         ),
@@ -93,7 +109,7 @@ async def main():
         ),
     ]
 
-    directory = "./repos/online-e-commerce-marketplace-project-backend"
+    directory = "./repos/cf-cqrs-microservice-sampler-master"
     lock = Lock()
     
     stop_event = threading.Event()
