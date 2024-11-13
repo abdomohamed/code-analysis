@@ -29,7 +29,7 @@ class Pipeline:
             if step.enabled:
                 answer = await self._ask(step, chunks, pre_step_summary)
                 pre_step_summary = " ".join([ans.summary for ans in answer])
-                result.append(answer)
+                result.extend(answer)
         # result = await asyncio.gather(*tasks)
         await self.outputPersistor.persist(result)
         await self.batchCodeSaver.save(result)
