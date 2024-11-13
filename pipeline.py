@@ -8,14 +8,17 @@ from common_models import FileType, Question, QuestionAnswer
 from file_processor import FileProcessor
 from output_persistor import OutputPersistor
 from repository_copilot import RepositoryCoPilot
+from batch_code_saver import BatchCodeSaver
+
 
 class Pipeline:
-    def __init__(self, questions, fileProcessor: FileProcessor, repoCoPilot: RepositoryCoPilot, chunker: Chunker, outputPersistor: OutputPersistor):
+    def __init__(self, questions, fileProcessor: FileProcessor, repoCoPilot: RepositoryCoPilot, chunker: Chunker, outputPersistor: OutputPersistor, batchCodeSaver: BatchCodeSaver):
         self.questions = questions
         self.repoCoPilot = repoCoPilot
         self.fileProcessor = fileProcessor
         self.chunker = chunker
         self.outputPersistor = outputPersistor
+        self.batchCodeSaver = batchCodeSaver
 
     async def run(self) -> List[QuestionAnswer]:
         files_content = await self.fileProcessor.read_files()
@@ -23,6 +26,7 @@ class Pipeline:
         tasks = [self._ask(question, chunks) for question in self.questions if question.enabled]
         result = await asyncio.gather(*tasks)
         await self.outputPersistor.persist(result)
+        await self.batchCodeSaver.save(result)
         
         return result
         

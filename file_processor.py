@@ -5,6 +5,13 @@ import aiofiles
 from common_models import FileType, PipelineSteps
 from progress_reporter import ProgressReporter
 
+class FileContent:
+    def __init__(self, filepath ,filename,filetype, content ):
+        self.filename = filename
+        self.content = content
+        self.filepath = filepath
+        self.filetype = filetype
+
 class FileProcessor:
     def __init__(self, 
                  directory, 
@@ -19,10 +26,10 @@ class FileProcessor:
     async def _read_file(self, filepath):
         try:
             async with aiofiles.open(filepath, 'r', encoding='utf-8') as file:
-                res =  filepath.name, self._get_file_type(filepath=filepath),  await file.read()
+                file_content = await file.read()
                 if self.progress_reporter:
                     self.progress_reporter.update(PipelineSteps.READING_FILES, 1)
-                return res
+                return FileContent(filepath,filepath.name,self._get_file_type(filepath=filepath), file_content) 
         except Exception as e:
             print(f"Error reading {filepath}: {e}")
             return filepath.name, None, None
@@ -62,8 +69,8 @@ class FileProcessor:
             
             results = await asyncio.gather(*tasks)
 
-            for filename, type, content in results:
-                if content is not None and type is not None:
-                    files_content[type].append({filename: filename, content: content})
+            for fileContent in results:
+                if fileContent.filetype is not None and fileContent.filetype is not None:
+                    files_content[fileContent.filetype].append(fileContent)
 
         return files_content

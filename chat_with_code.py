@@ -16,6 +16,9 @@ from progress_reporter import ProgressReporter
 from repository_copilot import RepositoryCoPilot
 from dotenv import load_dotenv
 from response_formats.code_refactoring import CodeRefactoringResponseFormat
+from batch_code_saver import BatchCodeSaver
+from code_saver import FileSaveStrategy
+
 
 # Load environment variables from .env file
 load_dotenv(".env")
@@ -70,21 +73,22 @@ async def main():
         ),
         Question(
             text="""Refactor the code in the context. Things to consider:
-                    - Migrate the code where it uses AWS services to Azure services
+                    - Migrate the code from AWS services to Azure services
                     - Respect the original functionality of the code
                     - Generate unit tests for the refactored code
+                    - Add azure documentation references for the refactored Azure services
                     - Don't make your own answer, limit the refactoring to the passed context
-                    - Stick to the original file name adding the suffix "_refactored" to the file name
+                    - Stick to the original file name
                     - Stick to the original file programming language
                     """, 
-            enabled=False,
-            system_prompt="""You are a helpful code assistant, you have good knowledge in coding and you will use the provided context to answer user questions with detailed explanations. You will help in migrating source files in the context. Make sure to limit the refactoring to the passed context don't make your own answer. You must generate unit tests for the refactored code before and after the refactoring to validate the change. Read the given context before answering questions and think step by step. If you can not answer a user question based on the provided context, inform the user. Do not use any other information for answering user""", 
+            enabled=True,
+            system_prompt="""You are a knowledgeable code assistant. Use the provided context to answer user questions with detailed explanations. Assist in migrating source files within the given context only. Generate unit tests for the refactored code before and after changes to validate. Read the context before responding and think step-by-step. If the context is insufficient to answer a question, inform the user and avoid using outside information. Do not provide your own answers.""", 
             models=[ "gpt-4o"], 
             allowed_file_types=[FileType.CODE],
             structured_output=True,
             response_format=CodeRefactoringResponseFormat
         ),
-         Question(
+        Question(
             text="""Refactor the code in the context. Things to consider:
                     - Migrate the code where it uses PCF cloud foundary services connectors to Azure services
                     - Respect the original functionality of the code
@@ -93,7 +97,7 @@ async def main():
                     - Stick to the original file name
                     - Stick to the original file programming language
                     """, 
-            enabled=True,
+            enabled=False,
             system_prompt="""You are a helpful code assistant, you have good knowledge in coding and you will use the provided context to answer user questions with detailed explanations. You will help in migrating source files in the context. Make sure to limit the refactoring to the passed context don't make your own answer. You must generate unit tests for the refactored code before and after the refactoring to validate the change. Read the given context before answering questions and think step by step. If you can not answer a user question based on the provided context, inform the user. Do not use any other information for answering user""", 
             models=[ "gpt-4o"], 
             allowed_file_types=[FileType.CODE, FileType.TEXT],
@@ -109,7 +113,7 @@ async def main():
         ),
     ]
 
-    directory = "./repos/cf-cqrs-microservice-sampler-master"
+    directory = "./repos/mmf-java-consume-cost-change"
     lock = Lock()
     
     stop_event = threading.Event()
@@ -130,9 +134,10 @@ async def main():
     repoCoPilot = RepositoryCoPilot(openai_client_factory=openAIClientFactory, progress_reporter=progress_reporter)
     chunker = ChunkPerFile(progress_reporter=progress_reporter)
     outputPersistor = OutputPersistor()
+    batchCodeSaver = BatchCodeSaver(save_strategy=FileSaveStrategy())
 
     pipeline = Pipeline(questions, fileProcessor,
-                        repoCoPilot, chunker, outputPersistor)
+                        repoCoPilot, chunker, outputPersistor, batchCodeSaver)
     
     await pipeline.run()
     

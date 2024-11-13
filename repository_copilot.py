@@ -11,7 +11,7 @@ from progress_reporter import ProgressReporter
 from common_models import PipelineSteps
 
 class RepositoryCoPilot:
-    def __init__(self, max_chunk_size=2000, openai_client_factory: OpenAIClientFactory = None, max_tokens=16384, progress_reporter: ProgressReporter = None):
+    def __init__(self, max_chunk_size=2000, openai_client_factory: OpenAIClientFactory = None, max_tokens=128000, progress_reporter: ProgressReporter = None):
         self._chunker = Chunker(max_chunk_size)
         self._openai_client_factory = openai_client_factory
         self._default_system_prompt = "You're an AI assistant that helps people to have more understanding about their source code repositories. Make sure your answers are based on the content of the repository. Another task you can do is by helping in migrating code from one cloud provider libraries to another. In-case of migrating code, make sure to validate the approach of the migration by writing unit tests for the change before and after the migration to validate the change."
@@ -42,16 +42,14 @@ class RepositoryCoPilot:
                         model=model,
                         messages=messages,
                         temperature=0,
-                        stream=False,
-                        max_tokens=max_completion_tokens
+                        stream=False
                     )
                 else:
                     response = await client.beta.chat.completions.parse(
                         model=model,
                         messages=messages,
                         temperature=0,
-                        response_format=question.response_format,
-                        max_tokens=max_completion_tokens
+                        response_format=question.response_format
                     )
                     
                     ignore_answer = not any(code_change.is_refactored for code_change in response.choices[0].message.parsed.changes)
@@ -85,7 +83,6 @@ class RepositoryCoPilot:
     async def refine_answer(self, answers: List[ModelAnswer], question: Question) -> List[ModelAnswer]:
         system_prompt = question.system_prompt if question.system_prompt else self._default_system_prompt
         
-        
         model_answers = {}
 
         for answer in answers:
@@ -101,7 +98,7 @@ class RepositoryCoPilot:
 
         async def refine(model, answers: List[ModelAnswer]) -> ModelAnswer:
             combined_answers = "\n\n".join([answer.answer for answer in answers])
-            chunks = [answer.content for answer in answers]
+            
             max_completion_tokens = self._max_tokens - len(system_prompt.split()) - len(question.text.split())
             
             # Calculate the number of tokens needed
@@ -120,7 +117,6 @@ class RepositoryCoPilot:
                         ],
                         temperature=0,
                         stream=False,
-                        max_tokens=max_completion_tokens
                     )
                 else:
                     response = await client.beta.chat.completions.parse(
@@ -131,7 +127,6 @@ class RepositoryCoPilot:
                         ],
                         temperature=0,
                         response_format=question.response_format,
-                        max_tokens=max_completion_tokens
                     )
                 return ModelAnswer(model=model, answer=response.choices[0].message.content.strip(), content=combined_answers, ignore=False)
             except Exception as e:
@@ -142,8 +137,28 @@ class RepositoryCoPilot:
                     self._progress_reporter.update(PipelineSteps.REFINING_ANSWERS, 1)
 
         for model, answers in model_answers.items():
-            task = refine(model, answers)
-            tasks.append(task)
+            # Split answers into smaller buckets with a max of 14k characters
+            bucket = []
+            bucket_length = 0
+            
+            for answer in answers:
+                tasks.append(refine(answer.model, [answer]))
+                answer_length = len(answer.answer)
+                if bucket_length + answer_length > 2000:
+                    task = refine(model, bucket)
+                    tasks.append(task)
+                    bucket = [answer]
+                    bucket_length = answer_length
+                else:
+                    bucket.append(answer)
+                    bucket_length += answer_length
+
+            if bucket:
+                task = refine(model, bucket)
+                tasks.append(task)
+                
+            # task = refine(model, answers)
+            # tasks.append(task)
 
         if(self._progress_reporter):
             self._progress_reporter.init_step(PipelineSteps.REFINING_ANSWERS, len(tasks))
