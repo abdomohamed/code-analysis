@@ -81,7 +81,7 @@ async def main():
                     - Stick to the original file name
                     - Stick to the original file programming language
                     """, 
-            enabled=True,
+            enabled=False,
             system_prompt="""You are a knowledgeable code assistant. Use the provided context to answer user questions with detailed explanations. Assist in migrating source files within the given context only. Generate unit tests for the refactored code before and after changes to validate. Read the context before responding and think step-by-step. If the context is insufficient to answer a question, inform the user and avoid using outside information. Do not provide your own answers.""", 
             models=[ "gpt-4o"], 
             allowed_file_types=[FileType.CODE],
@@ -111,9 +111,36 @@ async def main():
             models=["gpt-4o-mini", "gpt-4o", "gpt4", "codellama"],
             allowed_file_types=[FileType.CODE, FileType.TEXT]
         ),
+                Question(
+            text="""Refactor the code in the context. Things to consider:                    - Stick to the original file programming language                    - Update Imports:                      - Locate all AWS SDK imports in your Java files.                      - Replace each AWS SDK import with the corresponding Azure SDK import.                    For example, replace:                    java                    import com.amazonaws.services.s3.*;                    with:                    java                    import com.azure.storage.blob.*;                    """,  
+            enabled=True,
+            system_prompt="""You are a helpful code assistant, you have good knowledge in coding and you will use the provided context to answer user questions with detailed explanations. You will help in migrating source files in the context. Make sure to limit the refactoring to the passed context don't make your own answer. You must generate unit tests for the refactored code before and after the refactoring to validate the change. Read the given context before answering questions and think step by step. If you can not answer a user question based on the provided context, inform the user. Do not use any other information for answering user""", 
+            models=[ "gpt-4o"], 
+            allowed_file_types=[FileType.CODE, FileType.TEXT],
+            structured_output=True,
+            response_format=CodeRefactoringResponseFormat
+        ),
+                        Question(
+            text="""Refactor API Calls:Locate code sections where AWS service APIs are used.Replace AWS-specific API calls with Azure-specific API calls.For example, replace AWS S3 API calls:javaAmazonS3 s3client = AmazonS3ClientBuilder.standard().build();s3client.putObject(new PutObjectRequest("bucket-name", "key", new File("file-path")));with Azure Blob Storage API calls:javaBlobServiceClient blobServiceClient = new BlobServiceClientBuilder().connectionString(connectionString).buildClient();BlobContainerClient containerClient = blobServiceClient.getBlobContainerClient("container-name");BlobClient blobClient = containerClient.getBlobClient("blob-name");blobClient.uploadFromFile("file-path");""",  
+            enabled=True,
+            system_prompt="""You are a helpful code assistant, you have good knowledge in coding and you will use the provided context to answer user questions with detailed explanations. You will help in migrating source files in the context. Make sure to limit the refactoring to the passed context don't make your own answer. You must generate unit tests for the refactored code before and after the refactoring to validate the change. Read the given context before answering questions and think step by step. If you can not answer a user question based on the provided context, inform the user. Do not use any other information for answering user""", 
+            models=[ "gpt-4o"], 
+            allowed_file_types=[FileType.CODE, FileType.TEXT],
+            structured_output=True,
+            response_format=CodeRefactoringResponseFormat
+        ),
+                        Question(
+            text="""Rename Variables and Methods:Use meaningful names for variables and methods to improve code readability.For example, change awsS3Client to azureBlobClient.""",  
+            enabled=False,
+            system_prompt="""You are a helpful code assistant, you have good knowledge in coding and you will use the provided context to answer user questions with detailed explanations. You will help in migrating source files in the context. Make sure to limit the refactoring to the passed context don't make your own answer. You must generate unit tests for the refactored code before and after the refactoring to validate the change. Read the given context before answering questions and think step by step. If you can not answer a user question based on the provided context, inform the user. Do not use any other information for answering user""", 
+            models=[ "gpt-4o"], 
+            allowed_file_types=[FileType.CODE, FileType.TEXT],
+            structured_output=True,
+            response_format=CodeRefactoringResponseFormat
+        ),
     ]
 
-    directory = "./repos/mmf-java-consume-cost-change"
+    directory = "./repos/aws-java-sample"
     lock = Lock()
     
     stop_event = threading.Event()

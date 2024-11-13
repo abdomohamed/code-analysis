@@ -18,7 +18,7 @@ class RepositoryCoPilot:
         self._max_tokens = max_tokens
         self._progress_reporter = progress_reporter
         
-    async def ask(self, question: Question, chunks) -> List[ModelAnswer]:
+    async def ask(self, question: Question, chunks, pre_step_summary) -> List[ModelAnswer]:
         async def get_response(chunk, model) -> ModelAnswer:
             system_prompt = question.system_prompt if question.system_prompt else self._default_system_prompt
             max_completion_tokens = self._max_tokens - len(system_prompt.split()) - len(question.text.split()) - len(chunk.split())
@@ -30,8 +30,12 @@ class RepositoryCoPilot:
                 
                 client = await self._openai_client_factory.get_client(model)
                 
+                system_prompt_with_summary = f"{system_prompt} summarize all your changes in the end."
+                system_prompt_with_history = system_prompt_with_summary
+                if pre_step_summary:
+                    system_prompt_with_history = f"{system_prompt_with_summary} this a summary of the previous steps: " + pre_step_summary
                 messages = [
-                    {"role": "system", "content": f"{system_prompt} \n```Content Structure: file_name, file_type, content```\n ```\nContext:\n" + chunk + "\n```"},
+                    {"role": "system", "content": f"{system_prompt_with_history} \n```Content Structure: file_name, file_type, content```\n ```\nContext:\n" + chunk + "\n```"},
                     {"role": "user", "content": question.text}
                 ]
                 
@@ -54,7 +58,10 @@ class RepositoryCoPilot:
                     
                     ignore_answer = not any(code_change.is_refactored for code_change in response.choices[0].message.parsed.changes)
                 
-                return ModelAnswer(model=model, answer=response.choices[0].message.content.strip(), content=chunk, ignore=ignore_answer)
+                if(self._progress_reporter):
+                    self._progress_reporter.update(PipelineSteps.ANSWERING_QUESTIONS, 1)
+                    
+                return ModelAnswer(model=model, answer=response.choices[0].message.content.strip(), summary=response.choices[0].message.parsed.summary, content=chunk, ignore=ignore_answer)
                 
             except Exception as e:
                 print(f"Question: {question.text} for model: {model}, had a skipped chunk due to {e}")
@@ -63,9 +70,6 @@ class RepositoryCoPilot:
                     await f.write(f"Chunk failed for LLM Model: {model}, prompt: {messages}, and chunk {chunk} The reason was: {e}\n\n")
 
                 return ModelAnswer(model=model, answer="error", content=chunk, ignore=True)
-            finally:
-                if(self._progress_reporter):
-                    self._progress_reporter.update(PipelineSteps.ANSWERING_QUESTIONS, 1)
             
             
         tasks = []

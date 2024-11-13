@@ -10,3 +10,4 @@ class CodeChange(BaseModel):
     
 class CodeRefactoringResponseFormat(BaseModel):
     changes: List[CodeChange]
+    summary: str

@@ -3,13 +3,14 @@ from enum import Enum, StrEnum
 from typing import Any
 
 
-ModelAnswer = namedtuple('ModelAnswer', ['model', 'answer', 'content', 'ignore'])
+ModelAnswer = namedtuple('ModelAnswer', ['model', 'answer', 'summary', 'content', 'ignore'])
 
 class QuestionAnswer:
-    def __init__(self, model: str, question: str, answer: str, time_taken, start_time, end_time, content: str):
+    def __init__(self, model: str, question: str, answer: str, summary: str, time_taken, start_time, end_time, content: str):
         self.model = model
         self.question = question
         self.answer = answer
+        self.summary = summary
         self.time_taken = time_taken
         self.start_time = start_time
         self.end_time = end_time

@@ -9,9 +9,9 @@ class BatchCodeSaver:
     def __init__(self, save_strategy: SaveStrategy):
         self.save_strategy = save_strategy
 
-    async def save(self, result: List[List[QuestionAnswer]]):
-        for question_model_answers in result:
-            for question_answer in question_model_answers:
+    async def save(self, result: List[QuestionAnswer]):
+        # for question_model_answers in result:
+            for question_answer in result:
                 try:
                     # print(f"answer to be saved as code: {question_answer.answer}")
                     content_dict = json.loads(question_answer.answer)
