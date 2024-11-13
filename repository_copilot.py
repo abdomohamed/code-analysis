@@ -30,10 +30,10 @@ class RepositoryCoPilot:
                 
                 client = await self._openai_client_factory.get_client(model)
                 
-                system_prompt_with_summary = f"{system_prompt} summarize all your changes in the end."
+                system_prompt_with_summary = f"{system_prompt} summarize all your changes at the end."
                 system_prompt_with_history = system_prompt_with_summary
                 if pre_step_summary:
-                    system_prompt_with_history = f"{system_prompt_with_summary} this a summary of the previous steps: " + pre_step_summary
+                    system_prompt_with_history = f"{system_prompt_with_summary} here is some history of previous steps: " + pre_step_summary
                 messages = [
                     {"role": "system", "content": f"{system_prompt_with_history} \n```Content Structure: file_name, file_type, content```\n ```\nContext:\n" + chunk + "\n```"},
                     {"role": "user", "content": question.text}
