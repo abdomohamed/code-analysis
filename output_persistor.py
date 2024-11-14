@@ -23,6 +23,7 @@ class OutputPersistor:
                     await f.write("---------------------Start Answer------------------------\n")
                     await f.write(f"LLM Model: {question_answer.model}\n\n")
                     await f.write(f"Content: {question_answer.content}\n\n")
+                    await f.write(f"System Prompt: {question_answer.system_prompt}\n\n")
                     await f.write(f"Question: {question_answer.question}\n\n")
                     await f.write(f"Answer: {question_answer.answer}\n\n")
                     await f.write(f"Summary: {question_answer.summary}\n\n")

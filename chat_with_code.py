@@ -112,27 +112,54 @@ async def main():
             allowed_file_types=[FileType.CODE, FileType.TEXT]
         ),
                 Question(
-            text="""Refactor the code in the context. Things to consider:                    - Stick to the original file programming language                    - Update Imports:                      - Locate all AWS SDK imports in your Java files.                      - Replace each AWS SDK import with the corresponding Azure SDK import.                    For example, replace:                    java                    import com.amazonaws.services.s3.*;                    with:                    java                    import com.azure.storage.blob.*;                    """,  
+            text="""Update Imports based on the following instructions:
+                    - Stick to the original file programming language: The language used in the original file must remain unchanged.
+                    - Locate and replace AWS SDK imports: Locate all AWS SDK imports in your Java files.
+                    You must met the following creteria:
+                        - AWS imports have been replaced by Azure equivalent.
+                        - No linting or unnecessary refactoring: Do not lint the files or perform any refactoring unless it is absolutely necessary for the import replacement.
+                        - Do not remove or modify any comments or documentation in the code.
+                        - Do not change or remove any annotations in the code.
+                        - No other modifications: Focus only on replacing the AWS SDK imports with the corresponding Azure SDK imports. Do not make any other changes to the code.
+                    """,
             enabled=True,
-            system_prompt="""You are a helpful code assistant, you have good knowledge in coding and you will use the provided context to answer user questions with detailed explanations. You will help in migrating source files in the context. Make sure to limit the refactoring to the passed context don't make your own answer. You must generate unit tests for the refactored code before and after the refactoring to validate the change. Read the given context before answering questions and think step by step. If you can not answer a user question based on the provided context, inform the user. Do not use any other information for answering user""", 
+            system_prompt="""You are a helpful code assistant, you have good knowledge in coding and you will use the provided context to answer user questions""",
             models=[ "gpt-4o"], 
-            allowed_file_types=[FileType.CODE, FileType.TEXT],
+            allowed_file_types=[FileType.CODE],
             structured_output=True,
             response_format=CodeRefactoringResponseFormat
         ),
                         Question(
-            text="""Refactor API Calls:Locate code sections where AWS service APIs are used.Replace AWS-specific API calls with Azure-specific API calls.For example, replace AWS S3 API calls:javaAmazonS3 s3client = AmazonS3ClientBuilder.standard().build();s3client.putObject(new PutObjectRequest("bucket-name", "key", new File("file-path")));with Azure Blob Storage API calls:javaBlobServiceClient blobServiceClient = new BlobServiceClientBuilder().connectionString(connectionString).buildClient();BlobContainerClient containerClient = blobServiceClient.getBlobContainerClient("container-name");BlobClient blobClient = containerClient.getBlobClient("blob-name");blobClient.uploadFromFile("file-path");""",  
+            text="""Change API Calls for the aws sdks based on the following instructions:
+                    - Locate code sections where AWS service APIs are used.
+                    - Replace AWS-specific API calls with Azure-specific API calls.
+                    - No linting or unnecessary refactoring: Do not lint the files or perform any refactoring unless it is absolutely necessary for the import replacement.
+                    - Ignore comments and documentations: Do not remove or modify any comments or documentation in the code.
+                    - Ignore annotations: Do not change or remove any annotations in the code.
+                    - No other modifications: Focus only on Changing API Calls with the corresponding Azure API Calls. Do not make any other changes to the code.
+                """,
             enabled=True,
-            system_prompt="""You are a helpful code assistant, you have good knowledge in coding and you will use the provided context to answer user questions with detailed explanations. You will help in migrating source files in the context. Make sure to limit the refactoring to the passed context don't make your own answer. You must generate unit tests for the refactored code before and after the refactoring to validate the change. Read the given context before answering questions and think step by step. If you can not answer a user question based on the provided context, inform the user. Do not use any other information for answering user""", 
+            system_prompt="""You are a helpful code assistant, you have good knowledge in coding and you will use the provided context to answer user questions""",
             models=[ "gpt-4o"], 
-            allowed_file_types=[FileType.CODE, FileType.TEXT],
+            allowed_file_types=[FileType.CODE],
             structured_output=True,
             response_format=CodeRefactoringResponseFormat
         ),
                         Question(
-            text="""Rename Variables and Methods:Use meaningful names for variables and methods to improve code readability.For example, change awsS3Client to azureBlobClient.""",  
+            text="""Rename Variables and Methods based on the following instructions:
+                    - Locate variables and methods with AWS-specific names.
+                    - Rename variables and methods to use Azure-specific names.
+                    - Only change names that are related to the context provided.
+                    - Apply the changes consistently throughout the code.
+                    - Use meaningful names for variables and methods to improve code readability.
+                    - For example, change awsS3Client to azureBlobClient.
+                    - No linting or unnecessary refactoring: Do not lint the files or perform any refactoring unless it is absolutely necessary for the import replacement.
+                    - Ignore comments and documentations: Do not remove or modify any comments or documentation in the code.
+                    - Ignore annotations: Do not change or remove any annotations in the code.
+                    - No other modifications: Focus only on renaming Variables and Methods. Do not make any other changes to the code.
+                """ ,
             enabled=False,
-            system_prompt="""You are a helpful code assistant, you have good knowledge in coding and you will use the provided context to answer user questions with detailed explanations. You will help in migrating source files in the context. Make sure to limit the refactoring to the passed context don't make your own answer. You must generate unit tests for the refactored code before and after the refactoring to validate the change. Read the given context before answering questions and think step by step. If you can not answer a user question based on the provided context, inform the user. Do not use any other information for answering user""", 
+            system_prompt="""You are a helpful code assistant, you have good knowledge in coding and you will use the provided context to answer user questions""",
             models=[ "gpt-4o"], 
             allowed_file_types=[FileType.CODE, FileType.TEXT],
             structured_output=True,
@@ -140,7 +167,7 @@ async def main():
         ),
     ]
 
-    directory = "./repos/aws-java-sample"
+    directory = "./repos/mmf-java-consume-cost-change"
     lock = Lock()
     
     stop_event = threading.Event()

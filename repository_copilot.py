@@ -33,7 +33,20 @@ class RepositoryCoPilot:
                 system_prompt_with_summary = f"{system_prompt} summarize all your changes at the end."
                 system_prompt_with_history = system_prompt_with_summary
                 if pre_step_summary:
-                    system_prompt_with_history = f"{system_prompt_with_summary} here is some history of previous steps: " + pre_step_summary
+                    try:
+                        summary_messages = [
+                            {"role": "system", "content": f"you are a helpful ai assistant and you are good at summarization , context: {pre_step_summary}"},
+                            {"role": "user", "content": "summarize the text"}
+                        ]
+                        sum_response = await client.chat.completions.create(
+                            model=model,
+                            messages=summary_messages,
+                            temperature=0,
+                            stream=False
+                        )
+                        system_prompt_with_history = f"{system_prompt_with_summary} here is some history of previous steps: " + sum_response.choices[0].message.content.strip()
+                    except Exception as e:
+                        print(f"Error generating summary for model {model}: {e}")
                 messages = [
                     {"role": "system", "content": f"{system_prompt_with_history} \n```Content Structure: file_name, file_type, content```\n ```\nContext:\n" + chunk + "\n```"},
                     {"role": "user", "content": question.text}
@@ -61,7 +74,7 @@ class RepositoryCoPilot:
                 if(self._progress_reporter):
                     self._progress_reporter.update(PipelineSteps.ANSWERING_QUESTIONS, 1)
                     
-                return ModelAnswer(model=model, answer=response.choices[0].message.content.strip(), summary=response.choices[0].message.parsed.summary, content=chunk, ignore=ignore_answer)
+                return ModelAnswer(model=model, answer=response.choices[0].message.content.strip(), summary=response.choices[0].message.parsed.summary, system_prompt=system_prompt_with_history, content=chunk, ignore=ignore_answer)
                 
             except Exception as e:
                 print(f"Question: {question.text} for model: {model}, had a skipped chunk due to {e}")
@@ -69,7 +82,7 @@ class RepositoryCoPilot:
                 async with aiofiles.open(f"./output/{question.text[:50]}_refined_iqnored_chunks.txt", 'a', encoding='utf-8') as f:
                     await f.write(f"Chunk failed for LLM Model: {model}, prompt: {messages}, and chunk {chunk} The reason was: {e}\n\n")
 
-                return ModelAnswer(model=model, answer="error", content=chunk, ignore=True)
+                return ModelAnswer(model=model, answer="error", content=chunk, summary="", system_prompt="", ignore=True)
             
             
         tasks = []

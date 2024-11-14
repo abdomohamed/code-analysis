@@ -52,11 +52,13 @@ class Pipeline:
         result = []
 
         for answer in chunks_answers:
+            if answer.ignore:
+                continue
             result.append(
                             QuestionAnswer
                             (
                                 model=answer.model, question=question.text, answer=answer.answer, 
-                                summary=answer.summary,
+                                summary=answer.summary,system_prompt=answer.system_prompt,
                                 time_taken=end_time - start_time, start_time=start_time, end_time=end_time, 
                                 content=answer.content
                             )

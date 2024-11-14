@@ -11,9 +11,12 @@ class SaveStrategy(ABC):
 class FileSaveStrategy(SaveStrategy):
     async def save(self, file_path: str, code_content: str):
         # Write the code content to the file asynchronously
-        async with aiofiles.open(file_path, 'w') as file:
-            await file.write(code_content)
-        print(f"Code saved to {file_path}")
+        try:
+            async with aiofiles.open(file_path, 'w') as file:
+                await file.write(code_content)
+            print(f"Code saved to {file_path}")
+        except Exception as e:
+            print(f"An error occurred while saving the file: {e}")
 
 class CodeSaver:
     def __init__(self, code_change: CodeChange, save_strategy: SaveStrategy):

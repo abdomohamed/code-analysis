@@ -69,8 +69,12 @@ class FileProcessor:
             
             results = await asyncio.gather(*tasks)
 
+            
             for fileContent in results:
-                if fileContent.filetype is not None and fileContent.filetype is not None:
-                    files_content[fileContent.filetype].append(fileContent)
+                try:
+                    if fileContent.filetype is not None and fileContent.filetype is not None:
+                        files_content[fileContent.filetype].append(fileContent)
+                except Exception as e:
+                    print(f"Error processing file contents: {e} path {filepath}")
 
         return files_content
