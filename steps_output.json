@@ -1,0 +1,120 @@
+[
+    {
+        "steps": [
+            {
+                "step_no": 1,
+                "description": "Examine the gradlew.bat file to determine if there are any Java source files or scripts being referenced or executed by this batch file.",
+                "line_num": "1-79",
+                "code": "@rem Gradle startup script for Windows",
+                "category": "NoChange"
+            },
+            {
+                "step_no": 2,
+                "description": "Identify the location of the Java source files in the project where AWS SDK imports might be present.",
+                "line_num": "10-14",
+                "code": "set DIRNAME=%~dp0\\nif \"%DIRNAME%\" == \"\" set DIRNAME=.\\nset APP_BASE_NAME=%~n0\\nset APP_HOME=%DIRNAME%",
+                "category": "NoChange"
+            },
+            {
+                "step_no": 3,
+                "description": "Refactor the AWS SDK imports to Azure SDK imports in the identified Java source files.",
+                "line_num": "N/A",
+                "code": "import com.amazonaws.services.s3.*; \\n\\n// Change to\\n\\nimport com.azure.storage.blob.*;",
+                "category": "Modification"
+            }
+        ],
+        "file_name": "repos/aws-java-sample/gradlew.bat"
+    }, {
+        "steps": [
+            {
+                "step_no": 1,
+                "description": "Update the groupId and artifactId of the AWS SDK dependency to the corresponding Azure SDK dependency.",
+                "line_num": "13-17",
+                "code": "<dependency>\\n    <groupId>com.azure</groupId>\\n    <artifactId>azure-storage-blob</artifactId>\\n    <version>12.13.0</version>\\n</dependency>",
+                "category": "Modification"
+            },
+            {
+                "step_no": 2,
+                "description": "Update the mainClass in the exec-maven-plugin configuration to an appropriate Azure SDK sample class.",
+                "line_num": "36-38",
+                "code": "<mainClass>com.azure.samples.BlobStorageSample</mainClass>",
+                "category": "Modification"
+            },
+            {
+                "step_no": 3,
+                "description": "Ensure any references to AWS-specific resources or configurations in other parts of the build or configuration are updated to Azure equivalents if applicable.",
+                "line_num": "25-30",
+                "code": "<resource>\\n    <directory>/path/to/azure/config/</directory>\\n</resource>",
+                "category": "Modification"
+            }
+        ],
+        "file_name": "repos/aws-java-sample/pom.xml"
+    }, {
+        "steps": [
+            {
+                "step_no": 1,
+                "description": "Locate and update all AWS SDK imports to use Azure Blob Storage SDK.",
+                "line_num": "20-29",
+                "code": "Replace imports from com.amazonaws.* to com.azure.storage.blob.*",
+                "category": "Modification"
+            },
+            {
+                "step_no": 2,
+                "description": "Replace the AmazonS3 client instantiation with the Azure BlobServiceClient instantiation.",
+                "line_num": "48",
+                "code": "AmazonS3 s3 = new BlobServiceClientBuilder().connectionString(\"<connection-string>\").buildClient();",
+                "category": "Modification"
+            },
+            {
+                "step_no": 3,
+                "description": "Remove code related to setting AWS region as Azure Blob Storage does not require this.",
+                "line_num": "50-51",
+                "code": "Remove Region usWest2 = Region.getRegion(Regions.US_WEST_2); and s3.setRegion(usWest2);",
+                "category": "Deletion"
+            },
+            {
+                "step_no": 4,
+                "description": "Update bucket creation logic to use Azure Blob Container creation.",
+                "line_num": "64-66",
+                "code": "BlobContainerClient containerClient = blobServiceClient.createBlobContainer(bucketName);",
+                "category": "Modification"
+            },
+            {
+                "step_no": 5,
+                "description": "Replace AWS S3 object upload logic with Azure Blob upload logic.",
+                "line_num": "75-77",
+                "code": "BlobClient blobClient = containerClient.getBlobClient(key); blobClient.uploadFromFile(createSampleFile().getPath());",
+                "category": "Modification"
+            },
+            {
+                "step_no": 6,
+                "description": "Replace AWS S3 object download logic with Azure Blob download logic.",
+                "line_num": "87-89",
+                "code": "BlobClient blobClient = containerClient.getBlobClient(key); InputStream inputStream = blobClient.openInputStream(); displayTextInputStream(inputStream);",
+                "category": "Modification"
+            },
+            {
+                "step_no": 7,
+                "description": "Replace AWS S3 list objects logic with Azure Blob list blobs logic.",
+                "line_num": "99-105",
+                "code": "for (BlobItem blobItem : containerClient.listBlobs(new ListBlobsOptions().setPrefix(\"My\"), null)) { System.out.println(\" - \" + blobItem.getName() + \"  \"); }",
+                "category": "Modification"
+            },
+            {
+                "step_no": 8,
+                "description": "Replace AWS S3 delete object logic with Azure Blob delete blob logic.",
+                "line_num": "114-115",
+                "code": "BlobClient blobClient = containerClient.getBlobClient(key); blobClient.delete();",
+                "category": "Modification"
+            },
+            {
+                "step_no": 9,
+                "description": "Replace AWS S3 delete bucket logic with Azure Blob delete container logic.",
+                "line_num": "120-122",
+                "code": "blobServiceClient.deleteBlobContainer(bucketName);",
+                "category": "Modification"
+            }
+        ],
+        "file_name": "repos/aws-java-sample/src/main/java/com/amazonaws/samples/S3Sample.java"
+    }
+]

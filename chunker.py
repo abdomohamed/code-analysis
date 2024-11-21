@@ -87,7 +87,11 @@ class ChunkPerFile(Chunker):
                 if(self.progress_reporter):
                     self.progress_reporter.update(PipelineSteps.CHUNKING)
                 
-                chunks[file_type].append(f"### source_file:{file_content.filepath} file_name:{file_content.filepath}, file_type: {file_type}, content:\n{file_content.content}")
+                chunks[file_type].append(f"""### source_file:{file_content.filepath} file_name:{file_content.filepath}, file_type: {file_type}, file_content:
+                                         <BEGIN_FILE_CONTENT>
+                                         {file_content.content}
+                                         <END_FILE_CONTENT>
+                                         """)
 
             print(f"Chunked {len(files_content[file_type])} files into {len(chunks[file_type])} chunks in {time.time() - start_time:.2f} seconds")
 

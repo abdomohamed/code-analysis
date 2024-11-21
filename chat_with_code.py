@@ -12,12 +12,14 @@ from model_config import ModelConfigParser
 from openai_client_factory import OpenAIClientFactory
 from output_persistor import OutputPersistor
 from pipeline import Pipeline
+from planner import Planner
 from progress_reporter import ProgressReporter
 from repository_copilot import RepositoryCoPilot
 from dotenv import load_dotenv
 from response_formats.code_refactoring import CodeRefactoringResponseFormat
 from batch_code_saver import BatchCodeSaver
 from code_saver import FileSaveStrategy
+from steps_executor import StepsExecutor
 
 
 # Load environment variables from .env file
@@ -111,30 +113,48 @@ async def main():
             models=["gpt-4o-mini", "gpt-4o", "gpt4", "codellama"],
             allowed_file_types=[FileType.CODE, FileType.TEXT]
         ),
-                Question(
-            text="""Refactor the code in the context. Things to consider:                    - Stick to the original file programming language                    - Update Imports:                      - Locate all AWS SDK imports in your Java files.                      - Replace each AWS SDK import with the corresponding Azure SDK import.                    For example, replace:                    java                    import com.amazonaws.services.s3.*;                    with:                    java                    import com.azure.storage.blob.*;                    """,  
+        Question(
+            text="""Update Imports based on the following::
+                    - Stick to the original file programming language
+                    - Make the changes consistent throughout the code.
+                    - Make the change granular and specific to the context provided.
+                    - Locate all AWS SDK imports in your Java files.                      
+                    - Replace each AWS SDK import with the corresponding Azure SDK import.
+                    """,  
             enabled=True,
             system_prompt="""You are a helpful code assistant, you have good knowledge in coding and you will use the provided context to answer user questions with detailed explanations. You will help in migrating source files in the context. Make sure to limit the refactoring to the passed context don't make your own answer. You must generate unit tests for the refactored code before and after the refactoring to validate the change. Read the given context before answering questions and think step by step. If you can not answer a user question based on the provided context, inform the user. Do not use any other information for answering user""", 
             models=[ "gpt-4o"], 
-            allowed_file_types=[FileType.CODE, FileType.TEXT],
+            allowed_file_types=[FileType.CODE],
+            structured_output=True,
+            response_format=CodeRefactoringResponseFormat
+        ),
+        Question(
+            text="""Refactor API Calls for the aws sdks:
+                    - Locate code sections where AWS service APIs are used.
+                    - Replace AWS-specific API calls with Azure-specific API calls.
+                    - Make the changes consistent throughout the code.
+                    - Make the change granular and specific to the context provided.
+                """,  
+            enabled=True,
+            system_prompt="""You are a helpful code assistant, you have good knowledge in coding and you will use the provided context to answer user questions with detailed explanations. You will help in migrating source files in the context. Make sure to limit the refactoring to the passed context don't make your own answer. You must generate unit tests for the refactored code before and after the refactoring to validate the change. Read the given context before answering questions and think step by step. If you can not answer a user question based on the provided context, inform the user. Do not use any other information for answering user""", 
+            models=[ "gpt-4o"], 
+            allowed_file_types=[FileType.CODE],
             structured_output=True,
             response_format=CodeRefactoringResponseFormat
         ),
                         Question(
-            text="""Refactor API Calls:Locate code sections where AWS service APIs are used.Replace AWS-specific API calls with Azure-specific API calls.For example, replace AWS S3 API calls:javaAmazonS3 s3client = AmazonS3ClientBuilder.standard().build();s3client.putObject(new PutObjectRequest("bucket-name", "key", new File("file-path")));with Azure Blob Storage API calls:javaBlobServiceClient blobServiceClient = new BlobServiceClientBuilder().connectionString(connectionString).buildClient();BlobContainerClient containerClient = blobServiceClient.getBlobContainerClient("container-name");BlobClient blobClient = containerClient.getBlobClient("blob-name");blobClient.uploadFromFile("file-path");""",  
+            text="""Rename Variables and Methods:
+                    - Locate variables and methods with references to AWS sdk.
+                    - Rename variables and methods to use Azure-specific names.
+                    - Only change names that are related to the context provided.
+                    - Apply the changes consistently throughout the code.
+                    - Use meaningful names for variables and methods to improve code readability.
+                    - Make the change granular and specific to the context provided.
+                """,  
             enabled=True,
             system_prompt="""You are a helpful code assistant, you have good knowledge in coding and you will use the provided context to answer user questions with detailed explanations. You will help in migrating source files in the context. Make sure to limit the refactoring to the passed context don't make your own answer. You must generate unit tests for the refactored code before and after the refactoring to validate the change. Read the given context before answering questions and think step by step. If you can not answer a user question based on the provided context, inform the user. Do not use any other information for answering user""", 
             models=[ "gpt-4o"], 
-            allowed_file_types=[FileType.CODE, FileType.TEXT],
-            structured_output=True,
-            response_format=CodeRefactoringResponseFormat
-        ),
-                        Question(
-            text="""Rename Variables and Methods:Use meaningful names for variables and methods to improve code readability.For example, change awsS3Client to azureBlobClient.""",  
-            enabled=False,
-            system_prompt="""You are a helpful code assistant, you have good knowledge in coding and you will use the provided context to answer user questions with detailed explanations. You will help in migrating source files in the context. Make sure to limit the refactoring to the passed context don't make your own answer. You must generate unit tests for the refactored code before and after the refactoring to validate the change. Read the given context before answering questions and think step by step. If you can not answer a user question based on the provided context, inform the user. Do not use any other information for answering user""", 
-            models=[ "gpt-4o"], 
-            allowed_file_types=[FileType.CODE, FileType.TEXT],
+            allowed_file_types=[FileType.CODE],
             structured_output=True,
             response_format=CodeRefactoringResponseFormat
         ),
@@ -151,10 +171,11 @@ async def main():
         PipelineSteps.ANSWERING_QUESTIONS,
         PipelineSteps.REFINING_ANSWERS,
         PipelineSteps.GENERATING_OUTPUT
-    ], stop_event=stop_event)
+    ], stop_event=stop_event, enabled=False)
 
-    progress_reporter_thread = threading.Thread(target=progress_reporter.report, daemon=True)
-    progress_reporter_thread.start()
+    if(progress_reporter.enabled):
+        progress_reporter_thread = threading.Thread(target=progress_reporter.report, daemon=True)
+        progress_reporter_thread.start()
     
     fileProcessor = FileProcessor(directory=directory, progress_reporter=progress_reporter)
     openAIClientFactory = OpenAIClientFactory(model_config_parser=ModelConfigParser())
@@ -162,9 +183,11 @@ async def main():
     chunker = ChunkPerFile(progress_reporter=progress_reporter)
     outputPersistor = OutputPersistor()
     batchCodeSaver = BatchCodeSaver(save_strategy=FileSaveStrategy())
-
+    planner = Planner(openai_client_factory=openAIClientFactory)
+    steps_executor = StepsExecutor()
+    
     pipeline = Pipeline(questions, fileProcessor,
-                        repoCoPilot, chunker, outputPersistor, batchCodeSaver)
+                        repoCoPilot, chunker, outputPersistor, batchCodeSaver, planner, steps_executor)
     
     await pipeline.run()
     

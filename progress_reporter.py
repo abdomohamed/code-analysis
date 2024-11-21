@@ -6,17 +6,19 @@ import time
 from threading import Thread
 
 class PipelineReport():
-    def __init__(self, pipeline_steps: List[str], ):
+    def __init__(self, pipeline_steps: List[str], enabled: bool = True):
         self.steps: List[str] = pipeline_steps
         self.steps_current: dict = {step: 0 for step in pipeline_steps}
         self.steps_total: dict = {step: 0 for step in pipeline_steps}
+        self.enabled = enabled
         
 
 class ProgressReporter():
-    def __init__(self, lock: Lock, steps: List[str], stop_event: Event =  None):
+    def __init__(self, lock: Lock, steps: List[str], stop_event: Event =  None, enabled: bool = True):
         self.pipeline_report = PipelineReport(steps)
         self.lock = lock
         self.stop_event = stop_event
+        self.enabled = enabled
         
     def init_step(self, step_name: str, total_tasks: int):
         if step_name not in self.pipeline_report.steps:
@@ -43,6 +45,9 @@ class ProgressReporter():
             self.pipeline_report.steps_current[step_name] -= finished_tasks
     
     def report(self):
+        if(not self.enabled):
+            return
+        
         while True:
             with self.lock:
                 os.system('cls' if os.name == 'nt' else 'clear')

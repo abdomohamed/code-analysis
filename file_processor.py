@@ -26,7 +26,7 @@ class FileProcessor:
     async def _read_file(self, filepath):
         try:
             async with aiofiles.open(filepath, 'r', encoding='utf-8') as file:
-                file_content = await file.read()
+                file_content = await file.readlines()
                 if self.progress_reporter:
                     self.progress_reporter.update(PipelineSteps.READING_FILES, 1)
                 return FileContent(filepath,filepath.name,self._get_file_type(filepath=filepath), file_content) 

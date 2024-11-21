@@ -2,7 +2,6 @@ from collections import namedtuple
 from enum import Enum, StrEnum
 from typing import Any
 
-
 ModelAnswer = namedtuple('ModelAnswer', ['model', 'answer', 'summary', 'content', 'ignore'])
 
 class QuestionAnswer:
